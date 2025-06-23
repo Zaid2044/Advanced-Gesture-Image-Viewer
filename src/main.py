@@ -12,8 +12,6 @@ class HandTracker:
         self.mp_hands = mp.solutions.hands
         self.hands = self.mp_hands.Hands(self.mode, self.max_hands, 1, self.detection_con, self.track_con)
         self.mp_draw = mp.solutions.drawing_utils
-        self.tip_ids = [4, 8, 12, 16, 20]
-        self.lm_list = []
         self.results = None
 
     def find_hands(self, img, draw=True):
@@ -25,43 +23,52 @@ class HandTracker:
                     self.mp_draw.draw_landmarks(img, hand_lms, self.mp_hands.HAND_CONNECTIONS)
         return img
 
-    def find_position(self, img, hand_no=0):
-        self.lm_list = []
+    def get_landmark_list(self, img):
+        lm_list_all = []
         if self.results.multi_hand_landmarks:
-            if hand_no < len(self.results.multi_hand_landmarks):
-                my_hand = self.results.multi_hand_landmarks[hand_no]
-                for id, lm in enumerate(my_hand.landmark):
+            for hand_lms in self.results.multi_hand_landmarks:
+                hand_pos = []
+                for id, lm in enumerate(hand_lms.landmark):
                     h, w, c = img.shape
                     cx, cy = int(lm.x * w), int(lm.y * h)
-                    self.lm_list.append([id, cx, cy])
-        return self.lm_list
+                    hand_pos.append([id, cx, cy])
+                lm_list_all.append(hand_pos)
+        return lm_list_all
 
-    def find_distance(self, p1, p2, img=None):
-        x1, y1 = self.lm_list[p1][1], self.lm_list[p1][2]
-        x2, y2 = self.lm_list[p2][1], self.lm_list[p2][2]
-        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-        length = math.hypot(x2 - x1, y2 - y1)
-        return length, img, [x1, y1, x2, y2, cx, cy]
+    def find_distance(self, p1_idx, p2_idx, lm_list):
+        if len(lm_list) > max(p1_idx, p2_idx):
+            x1, y1 = lm_list[p1_idx][1], lm_list[p1_idx][2]
+            x2, y2 = lm_list[p2_idx][1], lm_list[p2_idx][2]
+            length = math.hypot(x2 - x1, y2 - y1)
+            return length, (x1, y1), (x2, y2)
+        return None, None, None
+
 
 def main():
     cap = cv2.VideoCapture(0)
     tracker = HandTracker(max_hands=2)
 
-    img = cv2.imread("images/test_image.jpg")
-    if img is None:
+    try:
+        img = cv2.imread("images/test_image.jpg")
+        if img is None:
+            raise FileNotFoundError
+    except FileNotFoundError:
         print("Error: Could not load image. Make sure 'test_image.jpg' is in the 'images' folder.")
         return
 
-    h, w, _ = img.shape
+    h_img, w_img, _ = img.shape
     scale = 1.0
-    center_x, center_y = w // 2, h // 2
+    center_x, center_y = w_img // 2, h_img // 2
     angle = 0
     
+    pos_x, pos_y = center_x, center_y
+    smooth_scale, smooth_angle = scale, angle
+    smooth_x, smooth_y = pos_x, pos_y
+
     last_pan_pos = None
-    last_zoom_dist = None
-    last_rot_angle = None
-    
-    smoothing = 0.2
+    last_zoom_dist = 0
+    start_rot_angle = 0
+    start_rot_vector = None
 
     while True:
         success, frame = cap.read()
@@ -70,77 +77,75 @@ def main():
         
         frame = cv2.flip(frame, 1)
         frame = tracker.find_hands(frame)
-        lm_list_all = []
-        if tracker.results.multi_hand_landmarks:
-            for hand_lms in tracker.results.multi_hand_landmarks:
-                hand_pos = []
-                for id, lm in enumerate(hand_lms.landmark):
-                    h_cam, w_cam, c_cam = frame.shape
-                    cx, cy = int(lm.x * w_cam), int(lm.y * h_cam)
-                    hand_pos.append([id, cx, cy])
-                lm_list_all.append(hand_pos)
-        
-        current_pan_pos = None
-        current_zoom_dist = None
-        current_rot_angle = None
+        lm_list_all = tracker.get_landmark_list(frame)
 
         if len(lm_list_all) == 1:
-            hand = lm_list_all[0]
-            thumb_tip = hand[4]
-            index_tip = hand[8]
-            palm_center = hand[0]
+            hand_landmarks = lm_list_all[0]
             
-            dist, _, _ = tracker.find_distance(4, 8, frame)
+            dist, p1, p2 = tracker.find_distance(4, 8, hand_landmarks)
             
-            if dist < 50: 
-                if last_zoom_dist is None: last_zoom_dist = dist
-                zoom_change = (dist - last_zoom_dist) * 0.01
-                scale += zoom_change
-                last_zoom_dist = dist
-            else:
-                last_zoom_dist = None
+            if dist is not None:
+                if dist < 50:
+                    if last_zoom_dist == 0: last_zoom_dist = dist
+                    scale += (dist - last_zoom_dist) * 0.05
+                    last_zoom_dist = dist
+                else:
+                    last_zoom_dist = 0
+                
+                if dist > 80:
+                    palm_center = hand_landmarks[0][1:]
+                    if last_pan_pos is None: last_pan_pos = palm_center
+                    dx = palm_center[0] - last_pan_pos[0]
+                    dy = palm_center[1] - last_pan_pos[1]
+                    pos_x -= dx
+                    pos_y -= dy
+                    last_pan_pos = palm_center
+                else:
+                    last_pan_pos = None
 
-            if dist > 80:
-                current_pan_pos = palm_center[1], palm_center[2]
-                if last_pan_pos is None: last_pan_pos = current_pan_pos
-                dx = current_pan_pos[0] - last_pan_pos[0]
-                dy = current_pan_pos[1] - last_pan_pos[1]
-                center_x -= dx
-                center_y -= dy
-                last_pan_pos = current_pan_pos
-            else:
-                last_pan_pos = None
-        
         elif len(lm_list_all) == 2:
-            hand1, hand2 = lm_list_all[0], lm_list_all[1]
-            palm1_center = hand1[0]
-            palm2_center = hand2[0]
+            hand1_landmarks = lm_list_all[0]
+            hand2_landmarks = lm_list_all[1]
             
-            dx = palm2_center[1] - palm1_center[1]
-            dy = palm2_center[2] - palm1_center[2]
-            current_rot_angle = math.degrees(math.atan2(dy, dx))
+            p1 = hand1_landmarks[0][1:]
+            p2 = hand2_landmarks[0][1:]
 
-            if last_rot_angle is None: last_rot_angle = current_rot_angle
-            angle_change = current_rot_angle - last_rot_angle
-            angle += angle_change
-            last_rot_angle = current_rot_angle
+            if start_rot_vector is None:
+                start_rot_vector = (p2[0] - p1[0], p2[1] - p1[1])
+                start_rot_angle = angle
+
+            current_rot_vector = (p2[0] - p1[0], p2[1] - p1[1])
+            
+            angle1 = math.atan2(start_rot_vector[1], start_rot_vector[0])
+            angle2 = math.atan2(current_rot_vector[1], current_rot_vector[0])
+            
+            angle_change = math.degrees(angle2 - angle1)
+            angle = start_rot_angle + angle_change
+
         else:
             last_pan_pos = None
-            last_zoom_dist = None
-            last_rot_angle = None
+            last_zoom_dist = 0
+            start_rot_vector = None
 
         scale = np.clip(scale, 0.2, 5.0)
 
-        M = cv2.getRotationMatrix2D((w//2, h//2), angle, scale)
-        M[0, 2] += (w/2) - center_x
-        M[1, 2] += (h/2) - center_y
+        smoothing_factor = 0.2
+        smooth_scale = (1 - smoothing_factor) * smooth_scale + smoothing_factor * scale
+        smooth_angle = (1 - smoothing_factor) * smooth_angle + smoothing_factor * angle
+        smooth_x = (1 - smoothing_factor) * smooth_x + smoothing_factor * pos_x
+        smooth_y = (1 - smoothing_factor) * smooth_y + smoothing_factor * pos_y
+
+        M = cv2.getRotationMatrix2D((w_img//2, h_img//2), smooth_angle, smooth_scale)
+        M[0, 2] += (w_img/2) - smooth_x
+        M[1, 2] += (h_img/2) - smooth_y
         
-        output = cv2.warpAffine(img, M, (w, h))
+        output = cv2.warpAffine(img, M, (w_img, h_img))
 
         cv2.imshow("Gesture Controlled Viewer", output)
         cv2.imshow("Webcam Feed", frame)
 
-        if cv2.waitKey(1) & 0xFF in [ord('q'), 27]:
+        key = cv2.waitKey(1) & 0xFF
+        if key == ord('q') or key == 27:
             break
 
     cap.release()
