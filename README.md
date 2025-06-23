@@ -4,9 +4,6 @@ An advanced computer vision application that allows users to manipulate an image
 
 This application goes beyond simple commands, enabling complex interactions like panning, zooming, and rotating, all controlled by the position and orientation of the user's hands in real-time.
 
-![Demo GIF](https://user-images.githubusercontent.com/.../demo.gif)
-
-*(This is a placeholder. It is highly recommended to create a GIF of the application in action using a tool like [ScreenToGif](https://www.screentogif.com/) and upload it here. A visual demo is the most powerful way to showcase this project.)*
 
 ---
 
