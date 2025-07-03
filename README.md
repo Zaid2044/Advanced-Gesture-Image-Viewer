@@ -1,75 +1,87 @@
-# 🖐️ Advanced Gesture-Controlled Image Viewer
+# ✋ Advanced Gesture Image Viewer
 
-An advanced computer vision application that allows users to manipulate an image in a 2D augmented reality space using only hand gestures. This project leverages the MediaPipe library for high-fidelity hand tracking to create a fluid, intuitive, and hands-free user experience.
+A futuristic image viewer that responds to your hand gestures using real-time computer vision. Built using OpenCV and MediaPipe, it lets you browse through a folder of images by just waving your hand—no mouse or keyboard required.
 
-This application goes beyond simple commands, enabling complex interactions like panning, zooming, and rotating, all controlled by the position and orientation of the user's hands in real-time.
+---
 
+## 🧠 About the Project
+
+**Advanced Gesture Image Viewer** turns your webcam into a gesture controller. Wave your hand left or right to move through a photo gallery. Ideal for presentations, kiosks, or just a touch-free interface experience.
 
 ---
 
 ## ✨ Features
 
--   **Multi-Gesture Control:**
-    -   **Pan (Move):** Use a single open palm to "grab" the image and move it around the screen.
-    -   **Zoom:** Use a "pinch" gesture with your thumb and index finger. Moving them apart zooms in; bringing them together zooms out.
-    -   **Rotate:** Use two hands. The application tracks the angle between your palms to rotate the image.
--   **High-Fidelity Hand Tracking:** Powered by **Google's MediaPipe**, providing real-time, accurate tracking of 21 keypoints on each hand.
--   **Fluid Interaction:** Implements motion smoothing (interpolation) to eliminate jitter and create a smooth, professional feel for all transformations.
--   **Real-time AR-like Experience:** Overlays the manipulated image in a dedicated window, creating a compelling demonstration of human-computer interaction.
+* 🤚 **Hand Gesture Detection** (left/right swipe to navigate)
+* 🖼️ **Folder-Based Image Viewer**
+* 🧠 **MediaPipe Hand Tracking** for high accuracy
+* ⚡ **Lightweight & Fast** (runs on local webcam)
+* 💻 **Minimal GUI Overlay** using OpenCV windows
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠 Tech Stack
 
--   **Python**
--   **OpenCV:** For webcam capture, image processing, and rendering the final transformed image.
--   **MediaPipe:** For robust, high-performance hand and landmark detection.
--   **NumPy:** For performing the mathematical transformations (rotation, scaling, translation).
--   **Pygame:** Used for creating the display window and handling the event loop.
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat\&logo=python\&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-27338E?style=flat\&logo=opencv\&logoColor=white)
+![MediaPipe](https://img.shields.io/badge/MediaPipe-F57C00?style=flat\&logo=google\&logoColor=white)
 
 ---
 
 ## 🚀 Getting Started
 
-Follow these instructions to get the project running on your local machine.
+### 1. Clone the Repo
 
-### Prerequisites
+```bash
+git clone https://github.com/Zaid2044/Advanced-Gesture-Image-Viewer.git
+cd Advanced-Gesture-Image-Viewer
+```
 
--   Python 3.9+
--   A webcam connected to your computer.
+### 2. Install Dependencies
 
-### Installation
+```bash
+pip install opencv-python mediapipe
+```
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/Zaid2044/Advanced-Gesture-Image-Viewer.git
-    cd Advanced-Gesture-Image-Viewer
-    ```
+### 3. Add Images
 
-2.  **Create and activate a Python virtual environment:**
-    ```bash
-    python -m venv venv
-    .\venv\Scripts\Activate.ps1
-    ```
+* Place your images inside the `images/` folder
+* Supported formats: `.jpg`, `.png`, `.jpeg`
 
-3.  **Install the required dependencies:**
-    ```bash
-    pip install opencv-python mediapipe numpy pygame
-    ```
+### 4. Run the App
 
-4.  **Add an Image:**
-    -   Place an image file (e.g., `test_image.jpg`) inside the `images/` folder.
-    -   Ensure the filename in `src/main.py` matches the name of your image file.
+```bash
+python main.py
+```
+
+Make sure your webcam is connected. The app will launch and wait for gestures to control navigation.
 
 ---
 
-## ⚡ Usage
+## 🧪 Demo
 
-To run the application, execute the `main.py` script from the project root:
+Coming soon — add a demo video or GIF showing gesture-based navigation in action.
 
-```bash
-python src/main.py
+---
+
+## 📁 Folder Structure
+
 ```
--   Two windows will appear: one showing your webcam feed with hand tracking overlays, and another showing the image you are controlling.
--   Use the gestures described above to interact with the image.
--   Press 'q' or the Esc key on the active window to quit the application.
+Advanced-Gesture-Image-Viewer/
+├── images/
+├── main.py
+└── README.md
+```
+
+---
+
+## 👤 Author
+
+**MOHAMMED ZAID AHMED**
+[![GitHub](https://img.shields.io/badge/GitHub-Zaid2044-181717?style=flat\&logo=github)](https://github.com/Zaid2044)
+
+---
+
+## 🪪 License
+
+MIT License
